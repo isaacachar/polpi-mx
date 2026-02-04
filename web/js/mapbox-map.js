@@ -1,13 +1,10 @@
-// Polpi MX - Professional Mapbox GL JS Implementation
+// Polpi MX - Professional MapLibre GL JS Implementation
 
 let map;
 let currentMarkers = [];
 let clusteredProperties = [];
 let hoveredPropertyId = null;
 let popup = null;
-
-// Mapbox access token (using demo token, replace with your own for production)
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
 
 // Property type colors and icons
 const PROPERTY_STYLES = {
@@ -38,21 +35,19 @@ const PROPERTY_STYLES = {
     }
 };
 
-// Initialize professional Mapbox map
+// Initialize professional MapLibre map
 function initProfessionalMap() {
-    // Set access token
-    if (typeof mapboxgl !== 'undefined') {
-        mapboxgl.accessToken = MAPBOX_TOKEN;
-    } else {
-        console.error('Mapbox GL JS failed to load, falling back to alternative...');
+    // Check if MapLibre is loaded
+    if (typeof maplibregl === 'undefined') {
+        console.error('MapLibre GL JS failed to load, falling back to alternative...');
         initFallbackMap();
         return;
     }
 
     try {
-        map = new mapboxgl.Map({
+        map = new maplibregl.Map({
             container: 'map',
-            style: 'mapbox://styles/mapbox/dark-v11', // Professional dark theme
+            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', // Free dark theme
             center: [-99.1332, 19.4326], // CDMX center
             zoom: 10,
             pitch: 45, // Slight 3D tilt for premium look
@@ -63,15 +58,15 @@ function initProfessionalMap() {
         });
 
         // Add controls with custom styling
-        map.addControl(new mapboxgl.NavigationControl({
+        map.addControl(new maplibregl.NavigationControl({
             showCompass: false,
             visualizePitch: true
         }), 'top-right');
 
-        map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+        map.addControl(new maplibregl.FullscreenControl(), 'top-right');
 
         // Custom attribution
-        map.addControl(new mapboxgl.AttributionControl({
+        map.addControl(new maplibregl.AttributionControl({
             compact: true,
             customAttribution: 'Polpi MX'
         }), 'bottom-right');
@@ -83,19 +78,16 @@ function initProfessionalMap() {
             
             // Mark map as loaded for CSS styling
             document.getElementById('map').classList.add('loaded');
-            
-            // Add subtle map animations
-            map.setPaintProperty('background', 'background-opacity', 0.8);
         });
 
         // Error handling
         map.on('error', (e) => {
-            console.error('Mapbox error, falling back:', e);
+            console.error('MapLibre error, falling back:', e);
             initFallbackMap();
         });
 
     } catch (error) {
-        console.error('Mapbox GL JS initialization failed:', error);
+        console.error('MapLibre GL JS initialization failed:', error);
         initFallbackMap();
     }
 }
@@ -181,7 +173,7 @@ function addPropertyMarkers(listings) {
         el.style.opacity = '0';
         el.style.transform = 'scale(0) translateY(20px)';
         
-        const marker = new mapboxgl.Marker({
+        const marker = new maplibregl.Marker({
             element: el,
             anchor: 'bottom'
         })
@@ -265,7 +257,7 @@ function showPropertyHoverPopup(listing, markerElement) {
         </div>
     `;
 
-    popup = new mapboxgl.Popup({
+    popup = new maplibregl.Popup({
         closeButton: false,
         closeOnClick: false,
         anchor: 'top',
@@ -293,7 +285,7 @@ function addClusteredMarkers(listings) {
         if (cluster.properties.length > 1) {
             const el = createClusterMarker(cluster);
             
-            const marker = new mapboxgl.Marker({
+            const marker = new maplibregl.Marker({
                 element: el,
                 anchor: 'center'
             })
@@ -376,7 +368,7 @@ function fitMapToProperties(listings) {
     
     const bounds = coordinates.reduce((bounds, coord) => {
         return bounds.extend(coord);
-    }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+    }, new maplibregl.LngLatBounds(coordinates[0], coordinates[0]));
 
     map.fitBounds(bounds, {
         padding: {
@@ -441,13 +433,14 @@ function loadLeafletFallback() {
 function initPremiumLeafletMap() {
     map = L.map('leaflet-map').setView([19.4326, -99.1332], 10);
     
-    // Use premium dark tiles
-    L.tileLayer('https://tiles.openfreemap.org/styles/dark/{z}/{x}/{y}.png', {
-        attribution: '© OpenFreeMap contributors',
-        maxZoom: 18
+    // Use CartoDB dark tiles (reliable, free, no API key)
+    L.tileLayer('https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
     }).addTo(map);
 
-    console.log('Premium Leaflet fallback map initialized');
+    console.log('Leaflet fallback map initialized with CartoDB dark tiles');
 }
 
 // Export functions for global access

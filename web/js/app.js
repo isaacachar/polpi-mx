@@ -1,11 +1,11 @@
 // Polpi MX - Enhanced Main Application JavaScript
 
 const API_BASE = '';
-let map;
-let markers;
-let currentListings = [];
-let allListings = [];
-let savedProperties = JSON.parse(localStorage.getItem('savedProperties') || '[]');
+// map declared in mapbox-map.js
+var markers;
+var currentListings = [];
+var allListings = [];
+var savedProperties = JSON.parse(localStorage.getItem('savedProperties') || '[]');
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
