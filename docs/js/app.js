@@ -154,17 +154,115 @@ async function loadStats() {
     }
 }
 
-// Fetch with fallback to v1 API then legacy API
+// === STATIC DATA MODE (GitHub Pages) ===
+// Serve embedded data instead of calling backend API
+let _staticListingsCache = null;
+let _staticStatsCache = null;
+
+async function _getStaticListings() {
+    if (!_staticListingsCache) {
+        const resp = await fetch('js/data-listings.json');
+        _staticListingsCache = await resp.json();
+    }
+    return _staticListingsCache;
+}
+
+async function _getStaticStats() {
+    if (!_staticStatsCache) {
+        const resp = await fetch('js/data-stats.json');
+        _staticStatsCache = await resp.json();
+    }
+    return _staticStatsCache;
+}
+
+function _makeResponse(data) {
+    return { ok: true, json: async () => data };
+}
+
 async function fetchWithFallback(v1Url, fallbackUrl) {
+    const url = v1Url || fallbackUrl;
     try {
-        const response = await fetch(`${API_BASE}${v1Url}`);
-        if (response.ok) return response;
-        if (response.status === 404) {
-            return await fetch(`${API_BASE}${fallbackUrl}`);
+        // Stats
+        if (url.includes('/stats')) {
+            return _makeResponse(await _getStaticStats());
         }
-        return response;
+
+        // Listings (with filters)
+        if (url.includes('/listings')) {
+            const listings = await _getStaticListings();
+            const qIdx = url.indexOf('?');
+            const params = qIdx >= 0 ? new URLSearchParams(url.slice(qIdx + 1)) : new URLSearchParams();
+            let filtered = [...listings];
+
+            if (params.get('colonia')) filtered = filtered.filter(l => l.colonia === params.get('colonia'));
+            if (params.get('min_price')) filtered = filtered.filter(l => (l.price_mxn || 0) >= parseFloat(params.get('min_price')));
+            if (params.get('max_price')) filtered = filtered.filter(l => (l.price_mxn || 0) <= parseFloat(params.get('max_price')));
+            if (params.get('bedrooms')) filtered = filtered.filter(l => (l.bedrooms || 0) >= parseInt(params.get('bedrooms')));
+            if (params.get('bathrooms')) filtered = filtered.filter(l => (l.bathrooms || 0) >= parseInt(params.get('bathrooms')));
+            if (params.get('min_size')) filtered = filtered.filter(l => (l.size_m2 || 0) >= parseFloat(params.get('min_size')));
+            if (params.get('max_size')) filtered = filtered.filter(l => (l.size_m2 || 0) <= parseFloat(params.get('max_size')));
+            if (params.get('search')) {
+                const s = params.get('search').toLowerCase();
+                filtered = filtered.filter(l =>
+                    (l.title || '').toLowerCase().includes(s) ||
+                    (l.colonia || '').toLowerCase().includes(s) ||
+                    (l.description || '').toLowerCase().includes(s)
+                );
+            }
+            return _makeResponse(filtered);
+        }
+
+        // Colonias
+        if (url.includes('/colonias') && !url.includes('/neighborhood')) {
+            const listings = await _getStaticListings();
+            const map = {};
+            listings.forEach(l => { if (l.colonia) map[l.colonia] = (map[l.colonia] || 0) + 1; });
+            const colonias = Object.entries(map).map(([colonia, count]) => ({ colonia, count })).sort((a, b) => b.count - a.count);
+            return _makeResponse(colonias);
+        }
+
+        // Individual listing
+        if (url.match(/\/listing\/[^/?]+$/)) {
+            const id = url.split('/').pop();
+            const listings = await _getStaticListings();
+            return _makeResponse(listings.find(l => l.id === id) || {});
+        }
+
+        // Analysis
+        if (url.includes('/analyze/')) {
+            const id = url.split('/analyze/')[1].split('?')[0];
+            const listings = await _getStaticListings();
+            const listing = listings.find(l => l.id === id);
+            const comps = listing ? listings.filter(l => l.id !== id && l.colonia === listing.colonia).slice(0, 5) : [];
+            return _makeResponse({ deal_score: 65, comparables: comps, market_avg_price: null, price_vs_market: 0 });
+        }
+
+        // Neighborhood stats
+        if (url.includes('/neighborhood/')) {
+            const listings = await _getStaticListings();
+            const urlParams = new URLSearchParams(url.split('?')[1] || '');
+            const colonia = urlParams.get('colonia') || '';
+            const cl = listings.filter(l => l.colonia === colonia);
+            const avgPrice = cl.length ? cl.reduce((s, l) => s + (l.price_mxn || 0), 0) / cl.length : 0;
+            return _makeResponse({ colonia, total_listings: cl.length, avg_price: avgPrice });
+        }
+
+        // Trends
+        if (url.includes('/trends')) {
+            return _makeResponse({ monthly_trends: [], price_changes: [] });
+        }
+
+        // Neighborhoods compare
+        if (url.includes('/neighborhoods/compare')) {
+            return _makeResponse({ comparisons: [] });
+        }
+
+        // Fallback
+        console.warn('Unhandled static endpoint:', url);
+        return _makeResponse({});
     } catch (error) {
-        return await fetch(`${API_BASE}${fallbackUrl}`);
+        console.error('Static data error:', error);
+        return { ok: false, json: async () => ({}) };
     }
 }
 
