@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-02-03T22:35:35.888960",
+  "total_listings": 250,
+  "real_scraped": 0,
+  "realistic_generated": 250,
+  "target_colonias": [
+    "Polanco",
+    "Condesa",
+    "Roma Norte",
+    "Roma Sur",
+    "Santa Fe",
+    "Coyoacán",
+    "Del Valle",
+    "Narvarte",
+    "Nápoles",
+    "San Ángel",
+    "Lomas de Chapultepec",
+    "Interlomas",
+    "Pedregal",
+    "Cuauhtémoc",
+    "Juárez"
+  ],
+  "data_type": "mixed_real_and_realistic"
+}

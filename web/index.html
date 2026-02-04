@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polpi MX - Inteligencia Inmobiliaria en CDMX</title>
+    <meta name="description" content="Análisis de mercado inmobiliario en Ciudad de México impulsado por IA. Encuentra las mejores oportunidades de inversión en CDMX.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐙</text></svg>">
+    <link rel="stylesheet" href="css/style.css">
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css' rel='stylesheet' />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Cargando propiedades...</p>
+    </div>
+
+    <!-- Hero Section / Onboarding -->
+    <div id="heroSection" class="hero-section">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Inteligencia Inmobiliaria para CDMX</h1>
+                <p class="hero-subtitle">Análisis de mercado inmobiliario en Ciudad de México impulsado por IA. Encuentra las mejores oportunidades de inversión.</p>
+                <div class="hero-stats">
+                    <span class="hero-stat"><strong id="heroTotalProperties">300+</strong> propiedades</span>
+                    <span class="hero-stat"><strong id="heroTotalColonias">15</strong> colonias en CDMX</span>
+                    <span class="hero-stat">Actualizado <strong>diariamente</strong></span>
+                </div>
+                <button id="exploreBtn" class="hero-cta-btn">
+                    <i class="fas fa-search"></i> Explorar Propiedades
+                </button>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-chart-container">
+                    <canvas id="heroChart" width="300" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <button id="dismissHero" class="hero-dismiss">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <!-- Logo & Branding -->
+                <div class="logo">
+                    <h1><i class="fas fa-chart-line"></i> Polpi MX</h1>
+                    <p class="tagline">Inteligencia Inmobiliaria CDMX</p>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="header-search">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="globalSearch" placeholder="Buscar por colonia, tipo de propiedad..." class="search-input">
+                        <button id="searchBtn" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="header-stats" id="headerStats">
+                    <div class="stat">
+                        <span class="stat-value" id="totalListings">-</span>
+                        <span class="stat-label">Propiedades</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="totalColonias">-</span>
+                        <span class="stat-label">Colonias CDMX</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Section -->
+    <div id="dashboardSection" class="dashboard-section" style="display: none;">
+        <div class="container">
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🏠</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="dashTotalProperties">-</div>
+                        <div class="stat-label">Total Propiedades</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏙️</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="dashTotalColonias">-</div>
+                        <div class="stat-label">Colonias CDMX</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="dashAvgPrice">-</div>
+                        <div class="stat-label">Precio Promedio/m²</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="dashBestDeal">-</div>
+                        <div class="stat-label">Mejor Deal Score</div>
+                    </div>
+                </div>
+            </div>
+            <div class="market-pulse">
+                <div class="pulse-indicator">🟢</div>
+                <span id="marketPulse">Mercado activo — 47 nuevas propiedades en CDMX esta semana</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Filters Sidebar -->
+        <aside class="filters-sidebar" id="filtersSidebar">
+            <div class="filters-header">
+                <h2><i class="fas fa-filter"></i> Filtros</h2>
+                <button class="mobile-close" id="closeMobileFilters">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button id="bestDealsBtn" class="quick-action-btn">
+                    <i class="fas fa-star"></i> Mejores Ofertas
+                </button>
+                <button id="compareNeighborhoodsBtn" class="quick-action-btn secondary">
+                    <i class="fas fa-chart-bar"></i> Comparar Colonias
+                </button>
+            </div>
+
+            <!-- Sort Dropdown -->
+            <div class="filter-group">
+                <label><i class="fas fa-sort"></i> Ordenar por</label>
+                <select id="sortBy" class="filter-input">
+                    <option value="recent">Más recientes</option>
+                    <option value="price-low">Precio: Menor a mayor</option>
+                    <option value="price-high">Precio: Mayor a menor</option>
+                    <option value="deal-score">Deal Score</option>
+                    <option value="price-per-m2">Precio por m²</option>
+                </select>
+            </div>
+
+            <!-- Location Filter -->
+            <div class="filter-group">
+                <label><i class="fas fa-map-marker-alt"></i> Colonia</label>
+                <select id="coloniaFilter" class="filter-input">
+                    <option value="">Todas las colonias</option>
+                </select>
+            </div>
+
+            <!-- Property Type Filter -->
+            <div class="filter-group">
+                <label><i class="fas fa-home"></i> Tipo de propiedad</label>
+                <div class="property-type-grid">
+                    <button class="property-type-btn" data-type="" title="Todos">
+                        <i class="fas fa-th"></i>
+                        <span>Todos</span>
+                    </button>
+                    <button class="property-type-btn casa" data-type="casa" title="Casa">
+                        <i class="fas fa-home"></i>
+                        <span>Casa</span>
+                    </button>
+                    <button class="property-type-btn depto" data-type="departamento" title="Departamento">
+                        <i class="fas fa-building"></i>
+                        <span>Depto</span>
+                    </button>
+                    <button class="property-type-btn terreno" data-type="terreno" title="Terreno">
+                        <i class="fas fa-mountain"></i>
+                        <span>Terreno</span>
+                    </button>
+                    <button class="property-type-btn oficina" data-type="oficina" title="Oficina">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Oficina</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Price Range -->
+            <div class="filter-group">
+                <label><i class="fas fa-dollar-sign"></i> Precio (MXN)</label>
+                <div class="price-inputs">
+                    <input type="number" id="minPrice" placeholder="Mínimo" class="filter-input">
+                    <span class="range-separator">—</span>
+                    <input type="number" id="maxPrice" placeholder="Máximo" class="filter-input">
+                </div>
+            </div>
+
+            <!-- Bedrooms & Bathrooms -->
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label><i class="fas fa-bed"></i> Recámaras</label>
+                    <select id="bedroomsFilter" class="filter-input">
+                        <option value="">Cualquiera</option>
+                        <option value="1">1+</option>
+                        <option value="2">2+</option>
+                        <option value="3">3+</option>
+                        <option value="4">4+</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-shower"></i> Baños</label>
+                    <select id="bathroomsFilter" class="filter-input">
+                        <option value="">Cualquiera</option>
+                        <option value="1">1+</option>
+                        <option value="2">2+</option>
+                        <option value="3">3+</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Size Range -->
+            <div class="filter-group">
+                <label><i class="fas fa-ruler"></i> Tamaño (m²)</label>
+                <div class="price-inputs">
+                    <input type="number" id="minSize" placeholder="Mín m²" class="filter-input">
+                    <span class="range-separator">—</span>
+                    <input type="number" id="maxSize" placeholder="Máx m²" class="filter-input">
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="filter-actions">
+                <button id="applyFilters" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Aplicar Filtros
+                </button>
+                <button id="clearFilters" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> Limpiar
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+            <!-- View Controls -->
+            <div class="view-controls">
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="map">
+                        <i class="fas fa-map"></i>
+                        <span>Mapa</span>
+                    </button>
+                    <button class="view-btn" data-view="list">
+                        <i class="fas fa-list"></i>
+                        <span>Lista</span>
+                    </button>
+                </div>
+                
+                <div class="view-actions">
+                    <button class="mobile-filter-btn" id="mobileFilterBtn">
+                        <i class="fas fa-filter"></i>
+                        Filtros
+                    </button>
+                    <div class="results-count">
+                        <span id="listingCount">0 propiedades</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map View -->
+            <div id="mapView" class="view-panel active">
+                <div id="map"></div>
+            </div>
+
+            <!-- List View -->
+            <div id="listView" class="view-panel">
+                <div id="listingsGrid" class="listings-grid">
+                    <!-- Listings will be inserted here -->
+                </div>
+                
+                <!-- Pagination -->
+                <div id="pagination" class="pagination">
+                    <button id="prevPage" class="page-btn" disabled>
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </button>
+                    <span id="pageInfo" class="page-info">Página 1 de 1</span>
+                    <button id="nextPage" class="page-btn" disabled>
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Property Detail Modal -->
+    <div id="listingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Detalle de Propiedad</h2>
+                <div class="modal-actions">
+                    <button id="shareListingBtn" class="modal-action-btn">
+                        <i class="fas fa-share"></i>
+                    </button>
+                    <button id="favoriteListingBtn" class="modal-action-btn">
+                        <i class="far fa-heart"></i>
+                    </button>
+                    <button class="modal-close" id="modalClose">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="modal-tabs">
+                <button class="tab-btn active" data-tab="resumen">Resumen</button>
+                <button class="tab-btn" data-tab="analisis">Análisis</button>
+                <button class="tab-btn" data-tab="inversion">Inversión</button>
+                <button class="tab-btn" data-tab="vecindario">Vecindario</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Resumen Tab -->
+                <div id="resumenTab" class="tab-content active">
+                    <div id="listingDetail">
+                        <!-- Detail content will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Análisis Tab -->
+                <div id="analisisTab" class="tab-content">
+                    <div class="deal-score-section">
+                        <div class="deal-score-gauge-container">
+                            <canvas id="dealScoreGauge" width="200" height="100"></canvas>
+                            <div class="deal-score-text">
+                                <div class="score-value" id="dealScoreValue">-</div>
+                                <div class="score-label" id="dealScoreLabel">Calculando...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="price-comparison-chart">
+                        <h3>Comparación de Precio vs Mercado</h3>
+                        <div class="comparison-bar-container">
+                            <div class="comparison-bar">
+                                <div class="comparison-fill" id="priceComparisonFill"></div>
+                                <div class="market-marker" id="marketMarker"></div>
+                            </div>
+                            <div class="comparison-labels">
+                                <span>Muy bajo</span>
+                                <span>Promedio</span>
+                                <span>Muy alto</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="comparable-properties">
+                        <h3>Propiedades Comparables</h3>
+                        <div id="comparablesList" class="comparables-grid">
+                            <!-- Comparable properties will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Inversión Tab -->
+                <div id="inversionTab" class="tab-content">
+                    <div class="investment-calculator">
+                        <h3>Calculadora de Inversión</h3>
+                        <div class="calculator-grid">
+                            <div class="calculator-inputs">
+                                <div class="input-group">
+                                    <label>Enganche (%)</label>
+                                    <input type="number" id="downPayment" value="20" min="0" max="100">
+                                </div>
+                                <div class="input-group">
+                                    <label>Tasa de interés (%)</label>
+                                    <input type="number" id="interestRate" value="12" min="0" max="30" step="0.1">
+                                </div>
+                                <div class="input-group">
+                                    <label>Plazo (años)</label>
+                                    <input type="number" id="loanTerm" value="20" min="1" max="30">
+                                </div>
+                                <div class="input-group">
+                                    <label>Renta esperada (MXN/mes)</label>
+                                    <input type="number" id="expectedRent" value="25000" min="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>Apreciación anual (%)</label>
+                                    <input type="number" id="appreciationRate" value="5" min="0" max="20" step="0.1">
+                                </div>
+                            </div>
+                            <div class="calculator-results">
+                                <div class="result-card">
+                                    <div class="result-value" id="monthlyPayment">-</div>
+                                    <div class="result-label">Pago Mensual</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value" id="cashFlow">-</div>
+                                    <div class="result-label">Flujo de Efectivo</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value" id="capRate">-</div>
+                                    <div class="result-label">Cap Rate</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value" id="cashOnCash">-</div>
+                                    <div class="result-label">Cash-on-Cash Return</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="equity-chart-container">
+                            <h4>Proyección de Equity a 5 Años</h4>
+                            <canvas id="equityChart" width="600" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vecindario Tab -->
+                <div id="vecindarioTab" class="tab-content">
+                    <div class="neighborhood-stats">
+                        <h3>Estadísticas del Vecindario</h3>
+                        <div id="neighborhoodStatsContent">
+                            <!-- Neighborhood stats will be inserted here -->
+                        </div>
+                    </div>
+                    <div class="neighborhood-listings">
+                        <h3>Propiedades Cercanas</h3>
+                        <div id="nearbyListings" class="nearby-listings-grid">
+                            <!-- Nearby listings will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="contactAgentBtn" class="btn btn-primary">
+                    <i class="fas fa-phone"></i> Contactar Agente
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Neighborhood Comparison Modal -->
+    <div id="neighborhoodModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Comparar Colonias</h2>
+                <button class="modal-close" id="neighborhoodModalClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="neighborhood-selector">
+                    <div class="colonia-select">
+                        <label>Colonia 1</label>
+                        <select id="colonia1" class="filter-input">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="colonia-select">
+                        <label>Colonia 2</label>
+                        <select id="colonia2" class="filter-input">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div class="colonia-select">
+                        <label>Colonia 3 (opcional)</label>
+                        <select id="colonia3" class="filter-input">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <button id="compareBtn" class="btn btn-primary">Comparar</button>
+                </div>
+                <div id="comparisonResults" class="comparison-results" style="display: none;">
+                    <!-- Comparison results will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <span id="toastMessage">Mensaje</span>
+            <button id="toastClose" class="toast-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display: none;">
+        <div class="empty-content">
+            <i class="fas fa-home-alt"></i>
+            <h3>No se encontraron propiedades</h3>
+            <p>Intenta ajustar tus filtros de búsqueda</p>
+            <button id="clearFiltersEmpty" class="btn btn-primary">
+                <i class="fas fa-redo"></i> Limpiar Filtros
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Filter Overlay -->
+    <div id="mobileFilterOverlay" class="mobile-filter-overlay"></div>
+
+    <!-- Scripts -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js'></script>
+    <script src="js/mapbox-map.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/investment-calculator.js"></script>
+    <script src="js/neighborhood-comparison.js"></script>
+</body>
+</html>
