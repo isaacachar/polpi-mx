@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Polpi MX — Inteligencia Inmobiliaria Powered by AI</title>
+    <title>Polpi MX — Inteligencia Inmobiliaria</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -11,67 +11,106 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0F1629; color: #F1F5F9; overflow-x: hidden; }
-        .nav { position: sticky; top: 0; z-index: 1000; background: #0F1629; border-bottom: 1px solid rgba(74, 158, 255, 0.15); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(20px); }
+        
+        /* Navigation */
+        .nav { position: sticky; top: 0; z-index: 1000; background: rgba(15, 22, 41, 0.95); border-bottom: 1px solid rgba(74, 158, 255, 0.1); padding: 1.25rem 2.5rem; display: flex; align-items: center; justify-content: space-between; backdrop-filter: blur(20px); }
         .logo { font-size: 1.5rem; font-weight: 700; color: #4A9EFF; display: flex; align-items: center; gap: 0.5rem; }
-        .search-container { flex: 1; max-width: 600px; margin: 0 2rem; position: relative; }
-        .search-input { width: 100%; padding: 0.875rem 1.25rem; background: rgba(26, 35, 50, 0.8); border: 1px solid rgba(74, 158, 255, 0.2); border-radius: 12px; color: #F1F5F9; font-size: 0.95rem; backdrop-filter: blur(10px); transition: all 0.2s ease; }
-        .search-input:focus { outline: none; border-color: #4A9EFF; box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1); }
+        .search-container { flex: 1; max-width: 650px; margin: 0 3rem; }
+        .search-input { width: 100%; padding: 1rem 1.5rem; background: rgba(26, 35, 50, 0.6); border: 1px solid rgba(74, 158, 255, 0.15); border-radius: 50px; color: #F1F5F9; font-size: 0.95rem; backdrop-filter: blur(10px); transition: all 0.3s ease; }
+        .search-input:focus { outline: none; border-color: #4A9EFF; background: rgba(26, 35, 50, 0.8); box-shadow: 0 4px 12px rgba(74, 158, 255, 0.1); }
         .search-input::placeholder { color: #94A3B8; }
         .nav-links { display: flex; gap: 2rem; align-items: center; }
         .nav-link { color: #94A3B8; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s ease; }
         .nav-link:hover { color: #4A9EFF; }
-        .market-bar { background: #1A2332; padding: 1rem 2rem; display: flex; align-items: center; justify-content: center; gap: 2rem; border-bottom: 1px solid rgba(74, 158, 255, 0.1); flex-wrap: wrap; }
+        
+        /* Market Bar */
+        .market-bar { background: linear-gradient(135deg, #1A2332 0%, #1E2A3A 100%); padding: 1.25rem 2.5rem; display: flex; align-items: center; justify-content: center; gap: 2.5rem; border-bottom: 1px solid rgba(74, 158, 255, 0.08); flex-wrap: wrap; }
         .market-stat { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: #94A3B8; }
         .market-stat strong { color: #00D4FF; font-weight: 600; }
-        .stat-divider { width: 4px; height: 4px; border-radius: 50%; background: #4A9EFF; }
-        .filters { background: #0F1629; padding: 1.25rem 2rem; display: flex; gap: 0.75rem; overflow-x: auto; border-bottom: 1px solid rgba(74, 158, 255, 0.1); }
-        .filter-pill { padding: 0.625rem 1.25rem; background: rgba(26, 35, 50, 0.6); border: 1px solid rgba(74, 158, 255, 0.2); border-radius: 20px; color: #F1F5F9; font-size: 0.875rem; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; backdrop-filter: blur(8px); }
-        .filter-pill:hover { border-color: #4A9EFF; background: rgba(74, 158, 255, 0.1); }
+        .stat-divider { width: 4px; height: 4px; border-radius: 50%; background: rgba(74, 158, 255, 0.4); }
+        
+        /* Filters */
+        .filters { background: #0F1629; padding: 1.5rem 2.5rem; display: flex; gap: 1rem; overflow-x: auto; border-bottom: 1px solid rgba(74, 158, 255, 0.08); }
+        .filter-pill { padding: 0.75rem 1.5rem; background: rgba(26, 35, 50, 0.5); border: 1px solid rgba(74, 158, 255, 0.15); border-radius: 24px; color: #F1F5F9; font-size: 0.875rem; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; backdrop-filter: blur(8px); }
+        .filter-pill:hover { border-color: rgba(74, 158, 255, 0.4); background: rgba(26, 35, 50, 0.7); }
         .filter-pill.active { background: #4A9EFF; border-color: #4A9EFF; color: white; }
-        select.filter-pill { appearance: none; padding-right: 2rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23F1F5F9' d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; }
-        .main-content { display: flex; height: calc(100vh - 220px); }
+        select.filter-pill { appearance: none; padding-right: 2.5rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23F1F5F9' d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; }
+        
+        /* Main Content */
+        .main-content { display: flex; height: calc(100vh - 240px); }
         .map-section { flex: 1; position: relative; }
         #map { width: 100%; height: 100%; }
-        .maplibregl-popup-content { background: #1A2332; color: #F1F5F9; border-radius: 8px; padding: 1rem; border: 1px solid rgba(74, 158, 255, 0.2); }
+        .maplibregl-popup-content { background: #1A2332; color: #F1F5F9; border-radius: 12px; padding: 1.25rem; border: 1px solid rgba(74, 158, 255, 0.15); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
         .maplibregl-popup-tip { border-top-color: #1A2332 !important; }
-        .cards-section { flex: 1; overflow-y: auto; padding: 2rem; background: #0F1629; }
-        .results-header { margin-bottom: 1.5rem; color: #94A3B8; font-size: 0.875rem; }
+        
+        /* Cards Section - Airbnb Style */
+        .cards-section { flex: 1; overflow-y: auto; padding: 2.5rem; background: #0F1629; }
+        .results-header { margin-bottom: 2rem; color: #94A3B8; font-size: 0.9rem; font-weight: 500; }
         .results-count { color: #4A9EFF; font-weight: 600; }
-        .property-card { background: #1E2A3A; border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; border: 1px solid rgba(74, 158, 255, 0.15); transition: all 0.2s ease; cursor: pointer; opacity: 0; animation: fadeIn 0.4s ease forwards; }
+        
+        /* Property Cards - Airbnb Inspired */
+        .property-card { background: #1A2332; border-radius: 16px; overflow: hidden; margin-bottom: 2rem; border: 1px solid rgba(74, 158, 255, 0.08); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; opacity: 0; animation: fadeIn 0.5s ease forwards; }
         @keyframes fadeIn { to { opacity: 1; } }
-        .property-card:hover { transform: translateY(-2px); border-color: #4A9EFF; box-shadow: 0 8px 24px rgba(74, 158, 255, 0.15); }
-        .property-card.highlight { border-color: #00D4FF; box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2); }
-        .card-image { position: relative; height: 200px; background: linear-gradient(135deg, #1E2A3A 0%, #2D3B4F 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .card-image img { width: 100%; height: 100%; object-fit: cover; }
-        .card-image-placeholder { font-size: 3rem; opacity: 0.3; }
-        .ai-badge { position: absolute; top: 0.75rem; left: 0.75rem; padding: 0.375rem 0.875rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; backdrop-filter: blur(10px); border: 1px solid; }
-        .ai-badge.great { background: rgba(52, 211, 153, 0.2); border-color: #34D399; color: #34D399; }
-        .ai-badge.good { background: rgba(52, 211, 153, 0.15); border-color: #34D399; color: #34D399; }
-        .ai-badge.fair { background: rgba(74, 158, 255, 0.2); border-color: #4A9EFF; color: #4A9EFF; }
-        .ai-badge.above { background: rgba(251, 191, 36, 0.2); border-color: #FBBF24; color: #FBBF24; }
-        .ai-badge.premium { background: rgba(248, 113, 113, 0.2); border-color: #F87171; color: #F87171; }
-        .card-content { padding: 1.25rem; }
-        .price { font-size: 1.75rem; font-weight: 700; color: #F1F5F9; margin-bottom: 0.25rem; }
-        .price-m2 { font-size: 0.875rem; color: #94A3B8; margin-bottom: 1rem; }
-        .details { display: flex; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.875rem; color: #94A3B8; }
-        .detail-item { display: flex; align-items: center; gap: 0.25rem; }
-        .location { font-size: 0.875rem; color: #4A9EFF; margin-bottom: 0.5rem; }
-        .comparison { font-size: 0.8rem; color: #94A3B8; margin-bottom: 0.75rem; }
-        .ai-insight { font-size: 0.85rem; color: #94A3B8; font-style: italic; padding-top: 0.75rem; border-top: 1px solid rgba(74, 158, 255, 0.1); }
-        .footer { background: #1A2332; padding: 2rem; text-align: center; border-top: 1px solid rgba(74, 158, 255, 0.15); }
-        .footer-content { color: #94A3B8; font-size: 0.875rem; margin-bottom: 0.75rem; }
-        .footer-links { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }
-        .footer-link { color: #4A9EFF; text-decoration: none; font-size: 0.875rem; }
+        .property-card:hover { transform: translateY(-4px); border-color: rgba(74, 158, 255, 0.2); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(74, 158, 255, 0.1); }
+        .property-card.highlight { border-color: #00D4FF; box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.3), 0 12px 32px rgba(0, 212, 255, 0.2); }
+        
+        /* Card Image - Large & Immersive like Airbnb */
+        .card-image { position: relative; height: 340px; background: linear-gradient(135deg, #1E2A3A 0%, #2D3B4F 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .property-card:hover .card-image img { transform: scale(1.03); }
+        .card-image-placeholder { font-size: 4rem; opacity: 0.2; }
+        
+        /* AI Badge - Subtle & Elegant */
+        .ai-badge { position: absolute; top: 1rem; left: 1rem; padding: 0.5rem 1rem; border-radius: 24px; font-size: 0.75rem; font-weight: 600; backdrop-filter: blur(12px); border: 1px solid; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .ai-badge.great { background: rgba(52, 211, 153, 0.15); border-color: rgba(52, 211, 153, 0.6); color: #34D399; }
+        .ai-badge.good { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.5); color: #34D399; }
+        .ai-badge.fair { background: rgba(74, 158, 255, 0.15); border-color: rgba(74, 158, 255, 0.6); color: #4A9EFF; }
+        .ai-badge.above { background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.6); color: #FBBF24; }
+        .ai-badge.premium { background: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.6); color: #F87171; }
+        
+        /* Card Content - Clean & Spacious */
+        .card-content { padding: 1.75rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+        .location { font-size: 0.95rem; font-weight: 600; color: #F1F5F9; letter-spacing: -0.01em; }
+        .price { font-size: 1.5rem; font-weight: 700; color: #F1F5F9; text-align: right; }
+        .price-label { font-size: 0.75rem; color: #94A3B8; font-weight: 400; margin-top: 0.125rem; }
+        
+        .details { display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.875rem; color: #94A3B8; padding-bottom: 1rem; border-bottom: 1px solid rgba(74, 158, 255, 0.06); }
+        .detail-item { display: flex; align-items: center; gap: 0.375rem; }
+        
+        .price-m2 { font-size: 0.875rem; color: #4A9EFF; margin-bottom: 0.5rem; font-weight: 500; }
+        .comparison { font-size: 0.8rem; color: #94A3B8; margin-bottom: 1rem; }
+        
+        /* AI Insight - Subtle Enhancement */
+        .ai-insight { font-size: 0.875rem; color: #94A3B8; line-height: 1.5; padding: 1rem; background: rgba(26, 35, 50, 0.3); border-radius: 8px; border-left: 2px solid rgba(74, 158, 255, 0.3); }
+        
+        /* Footer */
+        .footer { background: linear-gradient(135deg, #1A2332 0%, #1E2A3A 100%); padding: 3rem 2.5rem; text-align: center; border-top: 1px solid rgba(74, 158, 255, 0.1); }
+        .footer-content { color: #94A3B8; font-size: 0.875rem; margin-bottom: 1rem; }
+        .footer-links { display: flex; justify-content: center; gap: 2.5rem; flex-wrap: wrap; }
+        .footer-link { color: #4A9EFF; text-decoration: none; font-size: 0.875rem; transition: color 0.2s ease; }
         .footer-link:hover { color: #00D4FF; }
-        @media (max-width: 768px) {
-            .nav { flex-direction: column; gap: 1rem; }
+        
+        /* Mobile */
+        @media (max-width: 968px) {
+            .nav { flex-direction: column; gap: 1rem; padding: 1rem 1.5rem; }
             .search-container { margin: 0; max-width: 100%; }
             .nav-links { gap: 1rem; }
+            .market-bar { padding: 1rem; gap: 1rem; }
+            .filters { padding: 1rem 1.5rem; gap: 0.5rem; }
             .main-content { flex-direction: column; height: auto; }
             .map-section { height: 400px; display: none; }
             .map-section.show { display: block; }
-            .cards-section { padding: 1rem; }
+            .cards-section { padding: 1.5rem; }
+            .card-image { height: 280px; }
+            .price { font-size: 1.25rem; }
         }
+        
+        /* Scrollbar */
+        .cards-section::-webkit-scrollbar { width: 8px; }
+        .cards-section::-webkit-scrollbar-track { background: #0F1629; }
+        .cards-section::-webkit-scrollbar-thumb { background: rgba(74, 158, 255, 0.2); border-radius: 4px; }
+        .cards-section::-webkit-scrollbar-thumb:hover { background: rgba(74, 158, 255, 0.3); }
     </style>
 </head>
 <body>
@@ -148,7 +187,6 @@
         let map, markers = [];
         let searchTimeout;
         
-        // Initialize
         fetch('js/data-listings.json')
             .then(r => r.json())
             .then(data => {
@@ -181,27 +219,27 @@
             if (diff < -15) return {
                 badge: "Gran Oportunidad",
                 badgeClass: "great",
-                text: "Precio significativamente bajo el promedio de la zona"
+                text: `Precio excepcional — ${Math.abs(diff).toFixed(0)}% bajo el promedio de ${listing.colonia.split(',')[0]}. Ideal para inversionistas que buscan alto potencial de plusvalía.`
             };
             if (diff < -5) return {
                 badge: "Buena Oportunidad",
                 badgeClass: "good",
-                text: `Ideal para inversión — precio competitivo en ${listing.colonia.split(',')[0]}`
+                text: `Precio competitivo en ${listing.colonia.split(',')[0]} — ${Math.abs(diff).toFixed(0)}% bajo el promedio. Una opción inteligente para compra o inversión.`
             };
             if (diff < 5) return {
                 badge: "Precio Justo",
                 badgeClass: "fair",
-                text: `Alineado con el mercado de ${listing.colonia.split(',')[0]}`
+                text: `Valuación alineada con el mercado actual de ${listing.colonia.split(',')[0]}. Refleja el valor real de la zona.`
             };
             if (diff < 15) return {
                 badge: "Sobre Mercado",
                 badgeClass: "above",
-                text: "Ligeramente sobre el promedio — evalúa ubicación exacta"
+                text: `${diff.toFixed(0)}% sobre el promedio — verifica acabados premium, amenidades especiales o ubicación exacta que justifiquen el precio.`
             };
             return {
                 badge: "Premium",
                 badgeClass: "premium",
-                text: "Precio premium — verifica amenidades y acabados"
+                text: `Precio premium en ${listing.colonia.split(',')[0]} — valida características exclusivas, acabados de lujo o ubicación privilegiada.`
             };
         }
         
@@ -212,6 +250,7 @@
                 center: [-99.1332, 19.4326],
                 zoom: 11.5
             });
+            map.addControl(new maplibregl.NavigationControl(), 'top-right');
             updateMarkers();
         }
         
@@ -226,17 +265,17 @@
                              insight.badgeClass === 'above' ? '#FBBF24' : '#F87171';
                 
                 const el = document.createElement('div');
-                el.style.cssText = `background:${color};color:#0F1629;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
+                el.style.cssText = `background:${color};color:#0F1629;padding:6px 12px;border-radius:16px;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-family:Inter,sans-serif;`;
                 el.textContent = `$${(listing.price_mxn/1000000).toFixed(1)}M`;
                 
                 const marker = new maplibregl.Marker({element: el})
                     .setLngLat([listing.lng, listing.lat])
-                    .setPopup(new maplibregl.Popup().setHTML(`
-                        <div style="color:#F1F5F9">
-                            <div style="font-weight:700;margin-bottom:8px">$${listing.price_mxn.toLocaleString()} MXN</div>
-                            <div style="font-size:13px;color:#94A3B8;margin-bottom:4px">${listing.bedrooms}rec · ${listing.bathrooms}baños · ${listing.size_m2}m²</div>
-                            <div style="font-size:12px;color:#4A9EFF">${listing.colonia.split(',')[0]}</div>
-                            <div style="font-size:11px;color:#94A3B8;margin-top:8px;font-style:italic">${insight.text}</div>
+                    .setPopup(new maplibregl.Popup({offset: 25}).setHTML(`
+                        <div style="min-width:220px">
+                            <div style="font-weight:700;font-size:1.1rem;margin-bottom:8px;color:#F1F5F9">$${listing.price_mxn.toLocaleString()} MXN</div>
+                            <div style="font-size:13px;color:#94A3B8;margin-bottom:6px">${listing.bedrooms} rec · ${listing.bathrooms} baños · ${listing.size_m2}m²</div>
+                            <div style="font-size:13px;color:#4A9EFF;margin-bottom:8px">📍 ${listing.colonia.split(',')[0]}</div>
+                            <div style="font-size:11px;color:#94A3B8;line-height:1.4;padding-top:8px;border-top:1px solid rgba(74,158,255,0.1)">${insight.text.substring(0, 100)}...</div>
                         </div>
                     `))
                     .addTo(map);
@@ -258,31 +297,38 @@
                 const card = document.createElement('div');
                 card.className = 'property-card';
                 card.id = `card-${idx}`;
-                card.style.animationDelay = `${Math.min(idx * 0.05, 1)}s`;
+                card.style.animationDelay = `${Math.min(idx * 0.04, 0.8)}s`;
                 
                 card.innerHTML = `
                     <div class="card-image">
                         ${listing.images && listing.images[0] 
-                            ? `<img src="${listing.images[0]}" alt="${listing.title}">`
+                            ? `<img src="${listing.images[0]}" alt="${listing.title}" loading="lazy">`
                             : '<div class="card-image-placeholder">🏢</div>'}
                         <div class="ai-badge ${insight.badgeClass}">${insight.badge}</div>
                     </div>
                     <div class="card-content">
-                        <div class="price">$${(listing.price_mxn/1000000).toFixed(2)}M MXN</div>
-                        <div class="price-m2">$${listing.price_per_m2.toLocaleString()}/m²</div>
+                        <div class="card-header">
+                            <div>
+                                <div class="location">${listing.colonia.split(',')[0]}</div>
+                                <div class="price-m2">$${listing.price_per_m2.toLocaleString()}/m²</div>
+                            </div>
+                            <div>
+                                <div class="price">$${(listing.price_mxn/1000000).toFixed(2)}M</div>
+                                <div class="price-label">MXN</div>
+                            </div>
+                        </div>
                         <div class="details">
-                            <div class="detail-item">${listing.bedrooms} rec</div>
+                            <div class="detail-item">${listing.bedrooms} recámaras</div>
                             <div class="detail-item">· ${listing.bathrooms} baños</div>
                             <div class="detail-item">· ${listing.size_m2} m²</div>
                         </div>
-                        <div class="location">📍 ${listing.colonia.split(',')[0]}</div>
                         <div class="comparison">${diff < 0 ? Math.abs(diff).toFixed(0) + '% bajo' : diff > 0 ? diff.toFixed(0) + '% sobre' : 'Al'} el promedio de ${listing.colonia.split(',')[0]}</div>
                         <div class="ai-insight">${insight.text}</div>
                     </div>
                 `;
                 
                 card.addEventListener('click', () => {
-                    map.flyTo({center: [listing.lng, listing.lat], zoom: 14});
+                    map.flyTo({center: [listing.lng, listing.lat], zoom: 14, duration: 1200});
                     markers[idx].togglePopup();
                     highlightCard(idx);
                 });
@@ -304,27 +350,24 @@
             const card = document.getElementById(`card-${idx}`);
             if (card) {
                 card.classList.add('highlight');
-                setTimeout(() => card.classList.remove('highlight'), 2000);
+                setTimeout(() => card.classList.remove('highlight'), 2500);
             }
         }
         
         function applyFilters() {
             let filtered = [...allListings];
             
-            // Price filter
             const priceRange = document.getElementById('priceFilter').value;
             if (priceRange !== 'all') {
                 const [min, max] = priceRange.split('-').map(Number);
                 filtered = filtered.filter(l => l.price_mxn >= min && l.price_mxn <= max);
             }
             
-            // Bedrooms filter
             const minBeds = document.getElementById('bedroomsFilter').value;
             if (minBeds !== 'all') {
                 filtered = filtered.filter(l => l.bedrooms >= parseInt(minBeds));
             }
             
-            // Search filter
             const search = document.getElementById('searchInput').value.toLowerCase();
             if (search) {
                 filtered = filtered.filter(l => 
@@ -333,7 +376,6 @@
                 );
             }
             
-            // Sort
             const sort = document.getElementById('sortFilter').value;
             if (sort === 'price-asc') filtered.sort((a,b) => a.price_mxn - b.price_mxn);
             else if (sort === 'price-desc') filtered.sort((a,b) => b.price_mxn - a.price_mxn);
@@ -361,7 +403,6 @@
                 const avgPrice = filteredListings.reduce((sum, l) => sum + l.price_per_m2, 0) / filteredListings.length;
                 document.getElementById('avgPriceM2').textContent = `$${Math.round(avgPrice).toLocaleString()}/m²`;
                 
-                // Find best deal
                 const withAvg = filteredListings.map(l => ({
                     ...l,
                     diff: ((l.price_per_m2 - (coloniaAverages[l.colonia] || 65000)) / (coloniaAverages[l.colonia] || 65000)) * 100
@@ -373,11 +414,10 @@
             }
         }
         
-        // Event listeners
         document.getElementById('priceFilter').addEventListener('change', applyFilters);
         document.getElementById('bedroomsFilter').addEventListener('change', applyFilters);
         document.getElementById('sortFilter').addEventListener('change', applyFilters);
-        document.getElementById('searchInput').addEventListener('input', (e) => {
+        document.getElementById('searchInput').addEventListener('input', () => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(applyFilters, 300);
         });
