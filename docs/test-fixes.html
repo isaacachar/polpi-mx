@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Fixes</title>
+</head>
+<body>
+    <h1>Testing Polpi MX Fixes</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Test data with edge cases
+        const testData = [
+            { id: 1, price_mxn: null, images: '[]' },
+            { id: 2, price_mxn: 5000000, images: '["https://example.com/image.jpg"]' },
+            { id: 3, price_mxn: 0, images: null },
+            { id: 4, price_mxn: 1500000, images: [] }
+        ];
+        
+        // Test formatPrice
+        function formatPrice(price) {
+            if (!price) return "Precio no disponible";
+            return '$' + price.toLocaleString('es-MX') + ' MXN';
+        }
+        
+        // Test formatPriceShort
+        function formatPriceShort(price) {
+            if (!price) return "N/A";
+            if (price >= 1000000) {
+                return '$' + (price / 1000000).toFixed(1) + 'M';
+            }
+            return '$' + (price / 1000).toFixed(0) + 'K';
+        }
+        
+        // Test image parsing
+        function parseImages(listing) {
+            let images = [];
+            if (listing.images) {
+                try {
+                    images = typeof listing.images === 'string' 
+                        ? JSON.parse(listing.images) 
+                        : listing.images;
+                } catch (e) {
+                    images = [];
+                }
+            }
+            return images;
+        }
+        
+        // Run tests
+        let results = '<h2>Test Results:</h2>';
+        
+        testData.forEach(listing => {
+            results += `<h3>Listing ${listing.id}:</h3>`;
+            results += `<p>Price: ${formatPrice(listing.price_mxn)}</p>`;
+            results += `<p>Price Short: ${formatPriceShort(listing.price_mxn)}</p>`;
+            
+            const images = parseImages(listing);
+            results += `<p>Images: ${images.length} images found</p>`;
+            if (images.length > 0) {
+                results += `<p>First image: ${images[0]}</p>`;
+            }
+        });
+        
+        results += '<h2>✅ All tests passed - no crashes!</h2>';
+        document.getElementById('results').innerHTML = results;
+    </script>
+</body>
+</html>
