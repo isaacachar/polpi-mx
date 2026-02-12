@@ -5,3 +5,7 @@ __pycache__/
 .DS_Store
 data/*.db
 *.log
+data/*.html
+remax_debug*.html
+sothebys_debug*.html
+data/html/
