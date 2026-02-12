@@ -461,6 +461,72 @@
         .apply-button:hover {
             background: var(--primary-hover);
         }
+
+        /* Skeleton Loaders */
+        .skeleton-card {
+            background: var(--bg-white);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                #f0f0f0 25%,
+                #e0e0e0 50%,
+                #f0f0f0 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .skeleton-image {
+            width: 100%;
+            height: 220px;
+        }
+
+        .skeleton-content {
+            padding: 16px;
+        }
+
+        .skeleton-text {
+            height: 20px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+
+        .skeleton-text.short {
+            width: 60%;
+        }
+
+        .skeleton-text.title {
+            height: 24px;
+            width: 40%;
+            margin-bottom: 16px;
+        }
+
+        .skeleton-details {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .skeleton-detail {
+            height: 16px;
+            width: 60px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -529,7 +595,7 @@
                 </div>
             </div>
 
-            <span class="results-count" id="resultsCount">83 resultados en CDMX</span>
+            <span class="results-count" id="resultsCount">549 resultados en CDMX</span>
         </div>
     </div>
 
@@ -538,7 +604,46 @@
             <div id="map"></div>
         </div>
         <div class="listings-panel" id="listingsPanel">
-            <div class="loading">Cargando propiedades...</div>
+            <!-- Skeleton loaders -->
+            <div class="skeleton-card">
+                <div class="skeleton skeleton-image"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton skeleton-text title"></div>
+                    <div class="skeleton-details">
+                        <div class="skeleton skeleton-detail"></div>
+                        <div class="skeleton skeleton-detail"></div>
+                        <div class="skeleton skeleton-detail"></div>
+                    </div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton skeleton-image"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton skeleton-text title"></div>
+                    <div class="skeleton-details">
+                        <div class="skeleton skeleton-detail"></div>
+                        <div class="skeleton skeleton-detail"></div>
+                        <div class="skeleton skeleton-detail"></div>
+                    </div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton skeleton-image"></div>
+                <div class="skeleton-content">
+                    <div class="skeleton skeleton-text title"></div>
+                    <div class="skeleton-details">
+                        <div class="skeleton skeleton-detail"></div>
+                        <div class="skeleton skeleton-detail"></div>
+                        <div class="skeleton skeleton-detail"></div>
+                    </div>
+                    <div class="skeleton skeleton-text"></div>
+                    <div class="skeleton skeleton-text short"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -18158,10 +18263,12 @@
         }
 
         function formatPrice(price) {
+            if (!price) return "Precio no disponible";
             return '$' + price.toLocaleString('es-MX') + ' MXN';
         }
 
         function formatPriceShort(price) {
+            if (!price) return "N/A";
             if (price >= 1000000) {
                 return '$' + (price / 1000000).toFixed(1) + 'M';
             }
@@ -18177,26 +18284,40 @@
                 return;
             }
 
-            panel.innerHTML = filteredListings.map(listing => `
-                <div class="listing-card" data-id="${listing.id}" onclick="highlightListing('${listing.id}')">
-                    <div class="listing-image">
-                        ${listing.images && listing.images[0] 
-                            ? `<img src="${listing.images[0]}" alt="${listing.title}" onerror="this.parentElement.innerHTML='<span class=\\'placeholder-icon\\'>🏠</span>'">`
-                            : '<span class="placeholder-icon">🏠</span>'
-                        }
-                    </div>
-                    <div class="listing-content">
-                        <div class="listing-price">${formatPrice(listing.price_mxn)}</div>
-                        <div class="listing-details">
-                            ${listing.bedrooms ? `<span class="listing-detail">${listing.bedrooms} rec</span>` : ''}
-                            ${listing.bathrooms ? `<span class="listing-detail">· ${listing.bathrooms} baños</span>` : ''}
-                            ${listing.size_m2 ? `<span class="listing-detail">· ${Math.round(listing.size_m2)} m²</span>` : ''}
+            panel.innerHTML = filteredListings.map(listing => {
+                // Parse images if stored as JSON string
+                let images = [];
+                if (listing.images) {
+                    try {
+                        images = typeof listing.images === 'string' 
+                            ? JSON.parse(listing.images) 
+                            : listing.images;
+                    } catch (e) {
+                        images = [];
+                    }
+                }
+                
+                return `
+                    <div class="listing-card" data-id="${listing.id}" onclick="highlightListing('${listing.id}')">
+                        <div class="listing-image">
+                            ${images && images[0] 
+                                ? `<img src="${images[0]}" alt="${listing.title}" onerror="this.parentElement.innerHTML='<span class=\\'placeholder-icon\\'>🏠</span>'">`
+                                : '<span class="placeholder-icon">🏠</span>'
+                            }
                         </div>
-                        <div class="listing-location">${listing.colonia || listing.city}</div>
-                        <div class="listing-title">${listing.title}</div>
+                        <div class="listing-content">
+                            <div class="listing-price">${formatPrice(listing.price_mxn)}</div>
+                            <div class="listing-details">
+                                ${listing.bedrooms ? `<span class="listing-detail">${listing.bedrooms} rec</span>` : ''}
+                                ${listing.bathrooms ? `<span class="listing-detail">· ${listing.bathrooms} baños</span>` : ''}
+                                ${listing.size_m2 ? `<span class="listing-detail">· ${Math.round(listing.size_m2)} m²</span>` : ''}
+                            </div>
+                            <div class="listing-location">${listing.colonia || listing.city}</div>
+                            <div class="listing-title">${listing.title}</div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             updateResultsCount();
             renderMarkers();
