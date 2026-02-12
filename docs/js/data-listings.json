@@ -1,4 +1,4 @@
-const LISTINGS_DATA = [
+[
   {
     "id": "eb40b6dbaad67d25",
     "source": "lamudi",
@@ -17567,4 +17567,4 @@ const LISTINGS_DATA = [
     "views_count": 0,
     "listing_type": "sale"
   }
-];
+]
