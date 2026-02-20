@@ -13,6 +13,9 @@ import time
 from database import PolpiDB
 from price_intelligence import PriceIntelligence
 from config import config
+from url_analyzer import URLAnalyzer
+from zoning_lookup import SEDUVIZoningLookup
+from geocoding import CDMXGeocoder, parse_input
 
 # Configure logging
 logging.basicConfig(level=config.LOG_LEVEL)
@@ -39,6 +42,9 @@ app.add_middleware(
 # Initialize database and intelligence
 db = PolpiDB()
 intel = PriceIntelligence()
+url_analyzer = URLAnalyzer()
+zoning_lookup = SEDUVIZoningLookup(use_mock_data=True)
+geocoder = CDMXGeocoder()
 
 # Pydantic models for request/response validation
 class ListingFilters(BaseModel):
@@ -102,6 +108,16 @@ class InvestmentAnalysis(BaseModel):
     annual_rental: float
     cap_rate: float
     investment_grade: str
+
+class URLAnalysisRequest(BaseModel):
+    url: str = Field(..., description="Property listing URL to analyze")
+
+class URLAnalysisResponse(BaseModel):
+    property: Dict[str, Any]
+    zoning: Optional[Dict[str, Any]]
+    buildable: Optional[Dict[str, Any]]
+    comparables: List[Dict[str, Any]]
+    analysis: Dict[str, Any]
 
 # Middleware for request logging
 @app.middleware("http")
@@ -285,6 +301,314 @@ async def search_listings(
     """Full-text search across listings"""
     results = db.search_listings(q, page, per_page)
     return results
+
+@app.post(f"{config.API_V1_PREFIX}/analyze-url", response_model=URLAnalysisResponse)
+async def analyze_url(request: URLAnalysisRequest):
+    """
+    Analyze a property listing URL and get instant market intelligence.
+    
+    Extracts property data, zoning information, buildable area calculations,
+    and comparable listings from the database.
+    """
+    try:
+        # Step 1: Extract property data from URL
+        logger.info(f"Analyzing URL: {request.url}")
+        property_data = url_analyzer.analyze_url(request.url)
+        
+        if not property_data:
+            raise HTTPException(
+                status_code=400,
+                detail="Failed to extract property data from URL"
+            )
+        
+        # Convert to dict for response
+        property_dict = property_data.to_dict()
+        
+        # Step 2: Get zoning information (if coordinates available)
+        zoning_info = None
+        buildable_info = None
+        
+        if property_data.lat and property_data.lng:
+            try:
+                zoning = zoning_lookup.lookup_by_coordinates(
+                    property_data.lat,
+                    property_data.lng
+                )
+                if zoning:
+                    zoning_info = {
+                        'category': zoning.category,
+                        'category_full': zoning.category_full,
+                        'max_floors': zoning.max_floors,
+                        'max_cos': zoning.max_cos,
+                        'max_cus': zoning.max_cus,
+                        'allowed_uses': zoning.allowed_uses,
+                        'min_open_area_pct': zoning.min_open_area_pct,
+                        'is_heritage_zone': zoning.is_heritage_zone
+                    }
+                    
+                    # Step 3: Calculate buildable area
+                    if property_data.lot_size_m2 or property_data.size_m2:
+                        lot_size = property_data.lot_size_m2 or property_data.size_m2
+                        buildable_info = zoning_lookup.calculate_buildable_area(
+                            lot_size,
+                            zoning
+                        )
+                        
+                        # Add price per buildable m²
+                        if property_data.price_mxn and buildable_info.get('max_total_construction_m2'):
+                            buildable_info['price_per_buildable_m2'] = round(
+                                property_data.price_mxn / buildable_info['max_total_construction_m2'],
+                                2
+                            )
+                            
+            except Exception as e:
+                logger.warning(f"Zoning lookup failed: {e}")
+        
+        # Step 4: Find comparable listings from database
+        comparables = []
+        if property_data.colonia:
+            try:
+                # Get listings from same colonia
+                filters = {'colonia': property_data.colonia}
+                if property_data.property_type:
+                    filters['property_type'] = property_data.property_type
+                
+                result = db.get_listings_paginated(filters, page=1, per_page=10, sort_by='newest')
+                comparables = result['listings'][:5]  # Top 5 comps
+                
+            except Exception as e:
+                logger.warning(f"Comparables lookup failed: {e}")
+        
+        # Step 5: Calculate analysis metrics
+        analysis = {
+            'data_quality': 'good' if all([
+                property_data.price_mxn,
+                property_data.size_m2,
+                property_data.colonia
+            ]) else 'partial',
+            'has_zoning_data': zoning_info is not None,
+            'has_comparables': len(comparables) > 0,
+            'comparable_count': len(comparables)
+        }
+        
+        # Add market positioning if we have comps
+        if comparables and property_data.price_mxn and property_data.size_m2:
+            comp_prices_per_m2 = [
+                c['price_mxn'] / c['size_m2'] 
+                for c in comparables 
+                if c.get('price_mxn') and c.get('size_m2') and c['size_m2'] > 0
+            ]
+            
+            if comp_prices_per_m2:
+                avg_comp_price = sum(comp_prices_per_m2) / len(comp_prices_per_m2)
+                listing_price_per_m2 = property_data.price_mxn / property_data.size_m2
+                
+                analysis['avg_market_price_per_m2'] = round(avg_comp_price, 2)
+                analysis['listing_price_per_m2'] = round(listing_price_per_m2, 2)
+                analysis['price_vs_market_pct'] = round(
+                    ((listing_price_per_m2 - avg_comp_price) / avg_comp_price) * 100,
+                    1
+                )
+                
+                if analysis['price_vs_market_pct'] < -15:
+                    analysis['market_position'] = 'Below Market (Potential Deal)'
+                elif analysis['price_vs_market_pct'] > 15:
+                    analysis['market_position'] = 'Above Market'
+                else:
+                    analysis['market_position'] = 'Market Rate'
+        
+        # Build response
+        response = {
+            'property': property_dict,
+            'zoning': zoning_info,
+            'buildable': buildable_info,
+            'comparables': comparables,
+            'analysis': analysis
+        }
+        
+        logger.info(f"Analysis complete for {request.url}")
+        return response
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Analysis error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Analysis failed: {str(e)}"
+        )
+
+class LocationAnalysisRequest(BaseModel):
+    location: str = Field(..., description="Address, colonia name, or coordinates (lat,lng)")
+    lot_size_m2: Optional[float] = Field(None, description="Lot size in m² for buildable calculations")
+
+class LocationAnalysisResponse(BaseModel):
+    location: Dict[str, Any]
+    zoning: Optional[Dict[str, Any]]
+    buildable: Optional[Dict[str, Any]]
+    development_potential: Optional[Dict[str, Any]]
+    market_data: Optional[Dict[str, Any]]
+    comparables: List[Dict[str, Any]]
+
+@app.post(f"{config.API_V1_PREFIX}/analyze-location", response_model=LocationAnalysisResponse)
+async def analyze_location(request: LocationAnalysisRequest):
+    """
+    Analyze a location by address, colonia, or coordinates.
+    Get zoning information, buildable potential, and market intelligence.
+    
+    NO SCRAPING - uses public data sources only.
+    """
+    try:
+        logger.info(f"Analyzing location: {request.location}")
+        
+        # Step 1: Parse input and get coordinates
+        address_input, coords = parse_input(request.location)
+        
+        geo_result = None
+        lat, lng = None, None
+        colonia = None
+        
+        if coords:
+            # User provided coordinates
+            lat, lng = coords
+            # Reverse geocode to get address info
+            geo_result = geocoder.reverse_geocode(lat, lng)
+        elif address_input:
+            # User provided address or colonia
+            geo_result = geocoder.geocode_address(address_input)
+            if not geo_result:
+                # Try as colonia search
+                geo_result = geocoder.search_colonia(address_input)
+        
+        if not geo_result:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Could not geocode location: {request.location}"
+            )
+        
+        lat, lng = geo_result.lat, geo_result.lng
+        colonia = geo_result.colonia
+        
+        location_info = {
+            'lat': lat,
+            'lng': lng,
+            'address': geo_result.address,
+            'colonia': geo_result.colonia,
+            'delegacion': geo_result.delegacion,
+            'city': geo_result.city,
+            'display_name': geo_result.display_name
+        }
+        
+        # Step 2: Get zoning information
+        zoning_info = None
+        buildable_info = None
+        development_potential = None
+        
+        try:
+            zoning = zoning_lookup.lookup_by_coordinates(lat, lng)
+            if zoning:
+                zoning_info = {
+                    'category': zoning.category,
+                    'category_full': zoning.category_full,
+                    'max_floors': zoning.max_floors,
+                    'max_cos': zoning.max_cos,
+                    'max_cus': zoning.max_cus,
+                    'allowed_uses': zoning.allowed_uses,
+                    'min_open_area_pct': zoning.min_open_area_pct,
+                    'is_heritage_zone': zoning.is_heritage_zone
+                }
+                
+                # Step 3: Calculate buildable area if lot size provided
+                if request.lot_size_m2:
+                    buildable_info = zoning_lookup.calculate_buildable_area(
+                        request.lot_size_m2,
+                        zoning
+                    )
+                    
+                    # Calculate development potential
+                    max_construction = buildable_info.get('max_total_construction_m2', 0)
+                    
+                    # Estimate unit counts (rough heuristics)
+                    development_potential = {
+                        'lot_size_m2': request.lot_size_m2,
+                        'max_buildable_m2': max_construction,
+                        'estimated_units': {}
+                    }
+                    
+                    # Apartment estimates (assuming 60-80m² per unit)
+                    if max_construction > 0:
+                        development_potential['estimated_units']['apartments_60m2'] = int(max_construction / 60)
+                        development_potential['estimated_units']['apartments_80m2'] = int(max_construction / 80)
+                        development_potential['estimated_units']['hotel_rooms_35m2'] = int(max_construction / 35)
+                        development_potential['estimated_units']['office_space_usable'] = int(max_construction * 0.85)  # 85% efficiency
+                    
+        except Exception as e:
+            logger.warning(f"Zoning lookup failed: {e}")
+        
+        # Step 4: Get market data from database
+        market_data = None
+        comparables = []
+        
+        if colonia:
+            try:
+                # Get all listings in this colonia
+                filters = {'colonia': colonia}
+                result = db.get_listings_paginated(filters, page=1, per_page=50, sort_by='newest')
+                all_listings = result['listings']
+                
+                if all_listings:
+                    # Calculate market averages
+                    prices_per_m2 = [
+                        l['price_mxn'] / l['size_m2']
+                        for l in all_listings
+                        if l.get('price_mxn') and l.get('size_m2') and l['size_m2'] > 0
+                    ]
+                    
+                    if prices_per_m2:
+                        market_data = {
+                            'colonia': colonia,
+                            'total_listings': len(all_listings),
+                            'avg_price_per_m2': round(sum(prices_per_m2) / len(prices_per_m2), 2),
+                            'min_price_per_m2': round(min(prices_per_m2), 2),
+                            'max_price_per_m2': round(max(prices_per_m2), 2),
+                        }
+                        
+                        # Calculate price per buildable m² if we have buildable info
+                        if buildable_info and buildable_info.get('max_total_construction_m2'):
+                            avg_land_price_per_buildable = market_data['avg_price_per_m2'] * (
+                                request.lot_size_m2 / buildable_info['max_total_construction_m2']
+                            ) if request.lot_size_m2 else None
+                            
+                            if avg_land_price_per_buildable:
+                                market_data['avg_land_price_per_buildable_m2'] = round(avg_land_price_per_buildable, 2)
+                    
+                    # Get top 5 comparables
+                    comparables = all_listings[:5]
+                    
+            except Exception as e:
+                logger.warning(f"Market data lookup failed: {e}")
+        
+        # Build response
+        response = {
+            'location': location_info,
+            'zoning': zoning_info,
+            'buildable': buildable_info,
+            'development_potential': development_potential,
+            'market_data': market_data,
+            'comparables': comparables
+        }
+        
+        logger.info(f"Location analysis complete for {request.location}")
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Location analysis error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Analysis failed: {str(e)}"
+        )
 
 # Legacy API endpoints for backward compatibility
 @app.get("/api/listings")
